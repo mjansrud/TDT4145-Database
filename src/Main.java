@@ -141,23 +141,83 @@ public class Main {
         System.out.println("Velg øvelse");
         int exercise = reader.nextInt();
 
-        //Bugfix 
+        //Bugfix
         reader.nextLine();
 
-        //printPersons(getPersons(stmt));
+        printPersons(getPersons(stmt));
+        System.out.println("-------------------");
         System.out.println("Skriv inn personnummer til medlem");
         String SSN = reader.nextLine();
-
         String SQL = ("INSERT INTO Result (WorkoutID, ExerciseID, SSN) values (" + workout + ", " + exercise + ", '" + SSN + "')");
-        //System.out.println(SQL);
 
+        //Create the general result
+        int inserted_id = 0;
         try {
             System.out.println("Opprettet resultat");
-            stmt.executeUpdate(SQL);
+            inserted_id = stmt.executeUpdate(SQL, Statement.RETURN_GENERATED_KEYS);
         } catch (SQLException ex) {
             System.out.println("Could not create result");
             printExeption(ex);
         }
+
+        //Analyse the exercise - Create SQL based on type
+        ResultSet type = getExercises(stmt, EXERCISES_BY_ID, exercise);
+        try {
+            while(type.next()) {
+                switch (type.getInt("type")) {
+                    case EXERCISE_CARDIO:
+
+                        System.out.println("Hva løftet du? (Heltall KG)");
+                        int cardio_load = reader.nextInt();
+
+                        System.out.println("Hvor mange repetisjoner?");
+                        int cardio_repetitions = reader.nextInt();
+
+                        System.out.println("Hvor mange sett?");
+                        int cardio_sets = reader.nextInt();
+
+                        SQL = ("INSERT INTO Cardio (ResultID, LoadKG, Repetitions, Sets) values (" + inserted_id + ", " + exercise + ", " + cardio_load + ", " + cardio_repetitions + ", " + cardio_sets + ")");
+                        break;
+                    case EXERCISE_STRENGTH:
+
+                        System.out.println("Hva løftet du? (Heltall KG)");
+                        int strength_load = reader.nextInt();
+
+                        System.out.println("Hvor mange repetisjoner?");
+                        int strength_repetitions = reader.nextInt();
+
+                        System.out.println("Hvor mange sett?");
+                        int strength_sets = reader.nextInt();
+
+                        SQL = ("INSERT INTO Strength (ResultID, LoadKG, Repetitions, Sets) values (" + inserted_id + ", " + strength_load + ", " + strength_repetitions + ", " + strength_sets + ")");
+                        break;
+                    case EXERCISE_ENDURANCE:
+
+                        System.out.println("Hvor langt løp du?");
+                        int endurance_length = reader.nextInt();
+
+                        System.out.println("Hvor mange minutter?");
+                        int endurance_minutes = reader.nextInt();
+
+                        SQL = ("INSERT INTO Endurance (ResultID, Length, Minutes) values (" + inserted_id + ", " + endurance_length + ", " + endurance_minutes + ")");
+
+                        break;
+                }
+            }
+
+        } catch (SQLException ex) {
+            System.out.println("Could not fetch exercise");
+            printExeption(ex);
+        }
+
+        try {
+            //System.out.println(SQL);
+            stmt.executeUpdate(SQL);
+        } catch (SQLException ex) {
+            System.out.println("Could not create specific result based on type");
+            printExeption(ex);
+        }
+
 
     }
 
@@ -176,7 +236,7 @@ public class Main {
         try {
             //1System.out.println("Fetching exercises");
             if (action == EXERCISES_BY_WORKOUT && id > 0){
-                return stmt.executeQuery("SELECT * FROM WorkoutHasExercise JOIN Workout ON WorkoutHasExercise.WorkoutID = Workout.WorkoutID JOIN Exercise ON WorkoutHasExercise.ExerciseID = Exercise.ExerciseID");
+                return stmt.executeQuery("SELECT * FROM WorkoutHasExercise JOIN Workout ON WorkoutHasExercise.WorkoutID = Workout.WorkoutID JOIN Exercise ON WorkoutHasExercise.ExerciseID = Exercise.ExerciseID WHERE Workout.WorkoutID=" + id);
             } else if (action == EXERCISES_BY_ID && id > 0){
                 return stmt.executeQuery("SELECT * FROM Exercise WHERE ExerciseID = " + id);
             }else{
@@ -202,11 +262,16 @@ public class Main {
 
 
     public static void printWorkouts(ResultSet workouts){
+        int count = 0;
         try {
             //System.out.println("Printing workouts");
             while(workouts.next())
             {
+                ++count;
                 System.out.println(workouts.getString("WorkoutID") + " - " + workouts.getString("Name") + " - Tid: " + readableTimestamp(workouts.getTimestamp("Time")) + " - Varighet: " + workouts.getString("Duration") + " minutter - Type: " + workouts.getString("Type"));
+            }
+            if (count == 0) {
+                System.out.println("Ingen treninger funnet");
             }
 
         } catch (SQLException ex) {
@@ -217,11 +282,16 @@ public class Main {
     }
 
     public static void printExercises(ResultSet exercises){
+        int count = 0;
         try {
             //System.out.println("Printing workouts");
             while(exercises.next())
             {
+                ++count;
                 System.out.println(exercises.getString("ExerciseID") + " - " + exercises.getString("Name") + " - " +  exercises.getString("Description") + " - Type: " + exercises.getInt("Type"));
+            }
+            if (count == 0) {
+                System.out.println("Ingen øvelser funnet");
             }
 
         } catch (SQLException ex) {
@@ -232,11 +302,16 @@ public class Main {
     }
 
     public static void printResults(ResultSet results){
+        int count = 0;
         try {
             //System.out.println("Printing workouts");
             while(results.next())
             {
+                ++count;
                 System.out.println(results.getString("Person.Name") + " - " + results.getString("Workout.Name") + " - " + results.getString("Exercise.Name"));
+            }
+            if (count == 0) {
+                System.out.println("Ingen resultater funnet");
             }
 
         } catch (SQLException ex) {
@@ -288,13 +363,17 @@ public class Main {
     }
 
     public static void printPersons(ResultSet persons){
+        int count = 0;
         try {
             //System.out.println("Printing workouts");
             while(persons.next())
             {
+                ++count;
                 System.out.println("Personnummer: " + persons.getString("SSN") + " - Navnr: " + persons.getString("Name") + " - Telefonnummer: " + persons.getString("Telephone") + " - Mail: " + persons.getString("Email"));
             }
-
+            if (count == 0) {
+                System.out.println("Ingen resultater funnet");
+            }
         } catch (SQLException ex) {
             System.out.println("Could not print members");
             printExeption(ex);
