@@ -11,7 +11,7 @@ import java.util.Scanner;
 public class Main {
 
     //Constants
-    public static final int NOT_SPECIFIED = -1;
+    public static final int ID_NOT_SPECIFIED = -1;
 
     //Workout types
     public static final int WORKOUT_INDOOR = 0;
@@ -368,7 +368,7 @@ public class Main {
                     printWorkouts(getWorkouts(stmt));
                     break;
                 case 3:
-                    printExercises(getExercises(stmt, EXERCISES_ALL, -1));
+                    printExercises(getExercises(stmt, EXERCISES_ALL, ID_NOT_SPECIFIED));
                     break;
                 case 4:
                     printResults(getResults(stmt));
