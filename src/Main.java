@@ -11,11 +11,21 @@ import java.util.Scanner;
 public class Main {
 
     //Constants
+    public static final int NOT_SPECIFIED = -1;
+
+    //Workout types
     public static final int WORKOUT_INDOOR = 0;
     public static final int WORKOUT_OUTDOOR = 1;
+
+    //Exercise types
     public static final int EXERCISE_CARDIO = 0;
     public static final int EXERCISE_STRENGTH = 1;
     public static final int EXERCISE_ENDURANCE = 2;
+
+    //Fetch exercise actions
+    public static final int EXERCISES_ALL = 0;
+    public static final int EXERCISES_BY_ID = 1;
+    public static final int EXERCISES_BY_WORKOUT = 2;
 
     //Global variables
 
@@ -119,10 +129,70 @@ public class Main {
 
     }
 
+    public static void createResult(Statement stmt, Scanner reader){
+
+        printWorkouts(getWorkouts(stmt));
+        System.out.println("-------------------");
+        System.out.println("Velg trening");
+        int workout = reader.nextInt();
+
+        printExercises(getExercises(stmt, EXERCISES_BY_WORKOUT, workout));
+        System.out.println("-------------------");
+        System.out.println("Velg øvelse");
+        int exercise = reader.nextInt();
+
+        //Bugfix
+        reader.nextLine();
+
+        //printPersons(getPersons(stmt));
+        System.out.println("Skriv inn personnummer til medlem");
+        String SSN = reader.nextLine();
+
+        String SQL = ("INSERT INTO Result (WorkoutID, ExerciseID, SSN) values (" + workout + ", " + exercise + ", '" + SSN + "')");
+        //System.out.println(SQL);
+
+        try {
+            System.out.println("Opprettet resultat");
+            stmt.executeUpdate(SQL);
+        } catch (SQLException ex) {
+            System.out.println("Could not create result");
+            printExeption(ex);
+        }
+
+    }
+
     public static ResultSet getWorkouts(Statement stmt){
         try {
             //1System.out.println("Fetching workouts");
             return stmt.executeQuery("SELECT * FROM Workout ");
+        } catch (SQLException ex) {
+            System.out.println("Could not fetch workouts");
+            printExeption(ex);
+        }
+        return null;
+    }
+
+    public static ResultSet getExercises(Statement stmt, int action, int id){
+        try {
+            //1System.out.println("Fetching exercises");
+            if (action == EXERCISES_BY_WORKOUT && id > 0){
+                return stmt.executeQuery("SELECT * FROM WorkoutHasExercise JOIN Workout ON WorkoutHasExercise.WorkoutID = Workout.WorkoutID JOIN Exercise ON WorkoutHasExercise.ExerciseID = Exercise.ExerciseID");
+            } else if (action == EXERCISES_BY_ID && id > 0){
+                return stmt.executeQuery("SELECT * FROM Exercise WHERE ExerciseID = " + id);
+            }else{
+                return stmt.executeQuery("SELECT * FROM Exercise");
+            }
+        } catch (SQLException ex) {
+            System.out.println("Could not fetch workouts");
+            printExeption(ex);
+        }
+        return null;
+    }
+
+    public static ResultSet getResults(Statement stmt){
+        try {
+            //1System.out.println("Fetching results");
+            return stmt.executeQuery("SELECT * FROM Result JOIN Workout ON Result.WorkoutID = Workout.WorkoutID JOIN Exercise ON Result.ExerciseID = Exercise.ExerciseID JOIN Person ON Person.SSN = Result.SSN");
         } catch (SQLException ex) {
             System.out.println("Could not fetch workouts");
             printExeption(ex);
@@ -136,7 +206,37 @@ public class Main {
             //System.out.println("Printing workouts");
             while(workouts.next())
             {
-                System.out.println(workouts.getString("WorkoutID") + " - Navn: " + workouts.getString("Name") + " - Tid: " + readableTimestamp(workouts.getTimestamp("Time")) + " - Varighet: " + workouts.getString("Duration") + " minutter - Type: " + workouts.getString("Template"));
+                System.out.println(workouts.getString("WorkoutID") + " - " + workouts.getString("Name") + " - Tid: " + readableTimestamp(workouts.getTimestamp("Time")) + " - Varighet: " + workouts.getString("Duration") + " minutter - Type: " + workouts.getString("Type"));
+            }
+
+        } catch (SQLException ex) {
+            System.out.println("Could not print workouts");
+            printExeption(ex);
+        }
+
+    }
+
+    public static void printExercises(ResultSet exercises){
+        try {
+            //System.out.println("Printing workouts");
+            while(exercises.next())
+            {
+                System.out.println(exercises.getString("ExerciseID") + " - " + exercises.getString("Name") + " - " +  exercises.getString("Description") + " - Type: " + exercises.getInt("Type"));
+            }
+
+        } catch (SQLException ex) {
+            System.out.println("Could not print workouts");
+            printExeption(ex);
+        }
+
+    }
+
+    public static void printResults(ResultSet results){
+        try {
+            //System.out.println("Printing workouts");
+            while(results.next())
+            {
+                System.out.println(results.getString("Person.Name") + " - " + results.getString("Workout.Name") + " - " + results.getString("Exercise.Name"));
             }
 
         } catch (SQLException ex) {
@@ -212,10 +312,10 @@ public class Main {
                     printWorkouts(getWorkouts(stmt));
                     break;
                 case 3:
-                    //printExercises(getExercises(stmt));
+                    printExercises(getExercises(stmt, EXERCISES_ALL, -1));
                     break;
                 case 4:
-                    //printResults(getResults(stmt));
+                    printResults(getResults(stmt));
                     break;
                 case 5:
                     //printCategory(getCategory(stmt));
@@ -224,7 +324,7 @@ public class Main {
                     //printGoals(getGoals(stmt));
                     break;
                 case 7:
-                  //createPerson(stmt, reader);
+                    //createPerson(stmt, reader);
                     break;
                 case 8:
                     createWorkout(stmt, reader);
@@ -233,7 +333,7 @@ public class Main {
                     createExercise(stmt, reader);
                     break;
                 case 10:
-                    //createResult(stmt, reader);
+                    createResult(stmt, reader);
                     break;
                 case 11:
                     //createCategory(stmt, reader);
