@@ -58,7 +58,7 @@ public class Main {
     public static ResultSet getWorkouts(Statement stmt){
         try {
             System.out.println("Fetching workouts");
-            return stmt.executeQuery("SELECT * FROM Workout JOIN ;
+            return stmt.executeQuery("SELECT * FROM Workout ");
         } catch (SQLException ex) {
             System.out.println("Could not fetch workouts");
             printExeption(ex);
