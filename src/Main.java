@@ -146,6 +146,62 @@ public class Main {
 
     }
 
+    public static ResultSet getPersons(Statement stmt){
+        try {
+            //1System.out.println("Fetching workouts");
+            return stmt.executeQuery("SELECT * FROM Person ");
+        } catch (SQLException ex) {
+            System.out.println("Could not fetch persons");
+            printExeption(ex);
+        }
+        return null;
+    }
+
+    public static void createPerson(Statement stmt, Scanner reader){
+
+        //Bugfix
+        reader.nextLine();
+
+        System.out.println("Tast inn personnummer");
+        String ssn = reader.nextLine();
+
+        System.out.println("Tast inn navn");
+        String person_name = reader.nextLine();
+
+        System.out.println("Tast inn telefonnummeret");
+        String phonenumber = reader.nextLine();
+
+        System.out.println("Tast inn email");
+        String email = reader.nextLine();
+
+        String SQL = ("INSERT INTO Person (SSN, Name, Telephone, Email) values ('" + ssn + "', + '" + person_name + "', '" + phonenumber + "', '" + email + "')");
+        //System.out.println(SQL);
+
+        try {
+            System.out.println("Opprettet nytt medlem");
+            stmt.executeUpdate(SQL);
+        } catch (SQLException ex) {
+            System.out.println("Could not create member");
+            printExeption(ex);
+        }
+
+    }
+
+    public static void printPersons(ResultSet persons){
+        try {
+            //System.out.println("Printing workouts");
+            while(persons.next())
+            {
+                System.out.println("Personnummer: " + persons.getString("SSN") + " - Navnr: " + persons.getString("Name") + " - Telefonnummer: " + persons.getString("Telephone") + " - Mail: " + persons.getString("Email"));
+            }
+
+        } catch (SQLException ex) {
+            System.out.println("Could not print members");
+            printExeption(ex);
+        }
+
+    }
+
     public static void closeStatement(Statement stmt ){
         try {
             System.out.println("Closing statement");
@@ -206,7 +262,7 @@ public class Main {
             System.out.println("-------------------");
             switch(alternative){
                 case 1:
-                    //printPersons(getPersons(stmt));
+                    printPersons(getPersons(stmt));
                     break;
                 case 2:
                     printWorkouts(getWorkouts(stmt));
@@ -224,7 +280,7 @@ public class Main {
                     //printGoals(getGoals(stmt));
                     break;
                 case 7:
-                  //createPerson(stmt, reader);
+                    createPerson(stmt, reader);
                     break;
                 case 8:
                     createWorkout(stmt, reader);
