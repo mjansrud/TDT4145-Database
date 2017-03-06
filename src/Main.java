@@ -170,10 +170,20 @@ public class Main {
     public static void printMenu(){
         System.out.println("-------------------");
         System.out.println("Velg et alternativ:");
-        System.out.println("1) Skriv ut treninger");
-        System.out.println("2) Opprett ny trening");
-        System.out.println("3) Opprett ny øvelse");
-        System.out.println("-------------------");
+        System.out.println("1) Skriv ut medlemmer");
+        System.out.println("2) Skriv ut treninger");
+        System.out.println("3) Skriv ut øvelser");
+        System.out.println("4) Skriv ut resultater");
+        System.out.println("5) Skriv ut kategorier");
+        System.out.println("6) Skriv ut mål");
+        System.out.println("7) Opprett nytt medlem");
+        System.out.println("8) Opprett ny trening");
+        System.out.println("9) Opprett ny øvelse");
+        System.out.println("10) Opprett nytt resultat");
+        System.out.println("11) Opprett ny kategori");
+        System.out.println("12) Opprett nytt mål");
+        System.out.println("13) Generer rapport");
+        System.out.println("14) Generer statistikk");
     }
 
     //Main
@@ -196,15 +206,48 @@ public class Main {
             System.out.println("-------------------");
             switch(alternative){
                 case 1:
-                    ResultSet workouts = getWorkouts(stmt);
-                    printWorkouts(workouts);
+                    //printPersons(getPersons(stmt));
                     break;
                 case 2:
-                    createWorkout(stmt, reader);
+                    printWorkouts(getWorkouts(stmt));
                     break;
                 case 3:
+                    //printExercises(getExercises(stmt));
+                    break;
+                case 4:
+                    //printResults(getResults(stmt));
+                    break;
+                case 5:
+                    //printCategory(getCategory(stmt));
+                    break;
+                case 6:
+                    //printGoals(getGoals(stmt));
+                    break;
+                case 7:
+                  //createPerson(stmt, reader);
+                    break;
+                case 8:
+                    createWorkout(stmt, reader);
+                    break;
+                case 9:
                     createExercise(stmt, reader);
                     break;
+                case 10:
+                    //createResult(stmt, reader);
+                    break;
+                case 11:
+                    //createCategory(stmt, reader);
+                    break;
+                case 12:
+                    //createGoal(stmt, reader);
+                    break;
+                case 13:
+                    //createReport(stmt, reader);
+                    break;
+                case 14:
+                    //createStatistics(stmt, reader);
+                    break;
+
                 default:
                     System.out.println("Ugyldig handling");
 
