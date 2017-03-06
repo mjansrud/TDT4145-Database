@@ -131,6 +131,14 @@ public class Main {
 
     public static void createResult(Statement stmt, Scanner reader){
 
+        //Bugfix
+        reader.nextLine();
+
+        printPersons(getPersons(stmt));
+        System.out.println("-------------------");
+        System.out.println("Skriv inn personnummer til medlem");
+        String SSN = reader.nextLine();
+
         printWorkouts(getWorkouts(stmt));
         System.out.println("-------------------");
         System.out.println("Velg trening");
@@ -141,20 +149,18 @@ public class Main {
         System.out.println("Velg øvelse");
         int exercise = reader.nextInt();
 
-        //Bugfix
-        reader.nextLine();
-
-        printPersons(getPersons(stmt));
-        System.out.println("-------------------");
-        System.out.println("Skriv inn personnummer til medlem");
-        String SSN = reader.nextLine();
         String SQL = ("INSERT INTO Result (WorkoutID, ExerciseID, SSN) values (" + workout + ", " + exercise + ", '" + SSN + "')");
 
         //Create the general result
         int inserted_id = 0;
         try {
             System.out.println("Opprettet resultat");
-            inserted_id = stmt.executeUpdate(SQL, Statement.RETURN_GENERATED_KEYS);
+            stmt.executeUpdate(SQL, Statement.RETURN_GENERATED_KEYS);
+            ResultSet keys = stmt.getGeneratedKeys();
+            if (keys.next()) {
+                inserted_id = keys.getInt(1);
+            }
+
         } catch (SQLException ex) {
             System.out.println("Could not create result");
             printExeption(ex);
