@@ -141,7 +141,7 @@ public class Main {
         System.out.println("Velg øvelse");
         int exercise = reader.nextInt();
 
-        //Bugfix 
+        //Bugfix
         reader.nextLine();
 
         //printPersons(getPersons(stmt));
@@ -302,6 +302,51 @@ public class Main {
 
     }
 
+    public static void createCategory(Statement stmt, Scanner reader){
+
+        reader.nextLine();
+
+        System.out.println("Tast inn navn på kategorien");
+        String category_name = reader.nextLine();
+
+        String SQL = ("INSERT INTO Category (Name) values ('" + category_name + "')");
+        //System.out.println(SQL);
+
+        try {
+            System.out.println("Opprettet ny kategori");
+            stmt.executeUpdate(SQL);
+        } catch (SQLException ex) {
+            System.out.println("Could not create category");
+            printExeption(ex);
+        }
+    }
+
+    public static ResultSet getCategory(Statement stmt){
+        try {
+            //1System.out.println("Fetching workouts");
+            return stmt.executeQuery("SELECT * FROM Category ");
+        } catch (SQLException ex) {
+            System.out.println("Could not fetch persons");
+            printExeption(ex);
+        }
+        return null;
+    }
+
+    public static void printCategory(ResultSet category){
+        try {
+            //System.out.println("Printing workouts");
+            while(category.next())
+            {
+                System.out.println(  " Category " + category.getString("Name") + " Similar " + category.getString("Similar"));
+            }
+        } catch (SQLException ex) {
+            System.out.println("Could not print workouts");
+            printExeption(ex);
+
+        }
+    }
+
+
     public static void closeStatement(Statement stmt ){
         try {
             System.out.println("Closing statement");
@@ -374,7 +419,7 @@ public class Main {
                     printResults(getResults(stmt));
                     break;
                 case 5:
-                    //printCategory(getCategory(stmt));
+                    printCategory(getCategory(stmt));
                     break;
                 case 6:
                     //printGoals(getGoals(stmt));
@@ -392,7 +437,7 @@ public class Main {
                     createResult(stmt, reader);
                     break;
                 case 11:
-                    //createCategory(stmt, reader);
+                    createCategory(stmt, reader);
                     break;
                 case 12:
                     //createGoal(stmt, reader);
