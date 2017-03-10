@@ -246,6 +246,76 @@ public class Main {
 
     }
 
+    //This is the goal method
+    public static void createGoal(Statement stmt, Scanner reader){
+
+        /*
+        printWorkouts(getWorkouts(stmt));
+        System.out.println("-------------------");
+        System.out.println("Velg trening");
+        int workout = reader.nextInt();
+
+        printExercises(getExercises(stmt, EXERCISES_BY_WORKOUT, workout));
+        System.out.println("-------------------");
+        System.out.println("Velg øvelse");
+        int exercise = reader.nextInt();
+        */
+        //Bugfix
+        reader.nextLine();
+
+        //printPersons(getPersons(stmt));
+        System.out.println("Skriv inn personnummer til medlem");
+        String SSN = reader.nextLine();
+
+        System.out.println("Skriv inn fra dato på formatet 2017-03-15 18:00:00");
+        String fromDate = reader.nextLine();
+
+        System.out.println("Skriv inn til dato på formatet 2017-03-15 18:00:00");
+        String toDate = reader.nextLine();
+
+        String SQL = ("INSERT INTO Goal (SSN, FromDate, ToDate) values (" + SSN + ", '" + fromDate + "', '" + toDate + "')");
+        //System.out.println(SQL);
+
+        try {
+            System.out.println("Opprettet goal");
+            stmt.executeUpdate(SQL);
+        } catch (SQLException ex) {
+            System.out.println("Could not create goal");
+            printExeption(ex);
+        }
+    }
+
+
+//This is the getGoals-method
+    public static ResultSet getGoals(Statement stmt) {
+        try {
+            System.out.println("Fetching results");
+            return stmt.executeQuery("SELECT * FROM Goal JOIN Person ON Person.SSN = Goal.SSN");
+
+        } catch (SQLException ex) {
+            System.out.println("Could not fetch workouts");
+            printExeption(ex);
+        }
+        return null;
+    }
+
+        //This is goal methods print
+    public static void printGoals(ResultSet goals){
+        try {
+            System.out.println("Printing workouts");
+            while(goals.next())
+            {
+                System.out.println("Personnummer: " + goals.getString("Person.Name") + "Fra dato: " + goals.getString("FromDate") + "Til dato " + goals.getString("ToDate"));
+                System.out.println("Dette er en test");
+            }
+
+        } catch (SQLException ex) {
+            System.out.println("Could not print workouts");
+            printExeption(ex);
+        }
+
+    }
+
     public static ResultSet getPersons(Statement stmt){
         try {
             //1System.out.println("Fetching workouts");
@@ -422,7 +492,7 @@ public class Main {
                     printCategory(getCategory(stmt));
                     break;
                 case 6:
-                    //printGoals(getGoals(stmt));
+                    printGoals(getGoals(stmt));
                     break;
                 case 7:
                     createPerson(stmt, reader);
@@ -440,7 +510,7 @@ public class Main {
                     createCategory(stmt, reader);
                     break;
                 case 12:
-                    //createGoal(stmt, reader);
+                    createGoal(stmt, reader);
                     break;
                 case 13:
                     //createReport(stmt, reader);
