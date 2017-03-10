@@ -27,6 +27,10 @@ public class Main {
     public static final int EXERCISES_BY_ID = 1;
     public static final int EXERCISES_BY_WORKOUT = 2;
 
+    //Type
+    public static final int FETCH_RESULT = 0;
+    public static final int FETCH_GOAL = 1;
+
     //Global variables
 
     //Help functions
@@ -59,7 +63,7 @@ public class Main {
     public static Statement createStatement(Connection conn){
 
         try {
-            System.out.println("Statement created");
+            //System.out.println("Statement created");
             return conn.createStatement();
         } catch (SQLException ex) {
             System.out.println("Failed to connect to DB");
@@ -255,6 +259,42 @@ public class Main {
         return null;
     }
 
+    public static ResultSet getCardio(Statement stmt, int type, int result){
+        try {
+            //1System.out.println("Fetching results");
+            if (type == FETCH_RESULT) return stmt.executeQuery("SELECT * FROM Cardio WHERE ResultID = " + result);
+            if (type == FETCH_GOAL) return stmt.executeQuery("SELECT * FROM Cardio WHERE GoalID = " + result);
+        } catch (SQLException ex) {
+            System.out.println("Could not fetch cardio results");
+            printExeption(ex);
+        }
+        return null;
+    }
+
+    public static ResultSet getStrength(Statement stmt, int type, int result){
+        try {
+            //1System.out.println("Fetching results");
+            if (type == FETCH_RESULT) return stmt.executeQuery("SELECT * FROM Strength WHERE ResultID = " + result);
+            if (type == FETCH_GOAL) return stmt.executeQuery("SELECT * FROM Strength WHERE GoalID = " + result);
+        } catch (SQLException ex) {
+            System.out.println("Could not fetch strength results");
+            printExeption(ex);
+        }
+        return null;
+    }
+
+    public static ResultSet getEndurance(Statement stmt, int type, int result){
+        try {
+            //1System.out.println("Fetching results");
+            if (type == FETCH_RESULT) return stmt.executeQuery("SELECT * FROM Endurance WHERE ResultID = " + result);
+            if (type == FETCH_GOAL) return stmt.executeQuery("SELECT * FROM Endurance WHERE GoalID = " + result);
+        } catch (SQLException ex) {
+            System.out.println("Could not fetch endurance results");
+            printExeption(ex);
+        }
+        return null;
+    }
+
     public static ResultSet getResults(Statement stmt){
         try {
             //1System.out.println("Fetching results");
@@ -307,7 +347,7 @@ public class Main {
 
     }
 
-    public static void printResults(ResultSet results){
+    public static void printResults(Connection conn, ResultSet results){
         int count = 0;
         try {
             //System.out.println("Printing workouts");
@@ -315,6 +355,25 @@ public class Main {
             {
                 ++count;
                 System.out.println(results.getString("Person.Name") + " - " + results.getString("Workout.Name") + " - " + results.getString("Exercise.Name"));
+
+                switch(results.getInt("Exercise.Type")){
+                    case EXERCISE_CARDIO:
+                        ResultSet cardio = getCardio(createStatement(conn), FETCH_RESULT, results.getInt("ResultID"));
+                        cardio.next();
+                        System.out.println("Vekt: " + cardio.getString("LoadKG") + " - Repitisjoner: " + cardio.getString("repetitions") + " - Set: " + cardio.getString("sets"));
+                        break;
+                    case EXERCISE_STRENGTH:
+                        ResultSet strength = getStrength(createStatement(conn), FETCH_RESULT, results.getInt("ResultID"));
+                        strength.next();
+                        System.out.println("Vekt: " + strength.getString("LoadKG") + " - Repitisjoner: " + strength.getString("repetitions") + " - Set: " + strength.getString("sets"));
+                        break;
+                    case EXERCISE_ENDURANCE:
+                        ResultSet endurance = getEndurance(createStatement(conn), FETCH_RESULT, results.getInt("ResultID"));
+                        endurance.next();
+                        System.out.println("Lengde: " + endurance.getString("Length") + " - Tid: " + endurance.getString("Minutes"));
+                        break;
+                }
+
             }
             if (count == 0) {
                 System.out.println("Ingen resultater funnet");
@@ -367,7 +426,7 @@ public class Main {
     }
 
 
-//This is the getGoals-method
+    //This is the getGoals-method
     public static ResultSet getGoals(Statement stmt) {
         try {
             System.out.println("Fetching results");
@@ -571,7 +630,7 @@ public class Main {
                     printExercises(getExercises(stmt, EXERCISES_ALL, ID_NOT_SPECIFIED));
                     break;
                 case 4:
-                    printResults(getResults(stmt));
+                    printResults(conn, getResults(stmt));
                     break;
                 case 5:
                     printCategory(getCategory(stmt));
