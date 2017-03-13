@@ -6,7 +6,10 @@ import java.sql.ResultSet;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Scanner;
-
+import java.util.logging.Logger;
+import java.util.logging.FileHandler;
+import java.io.IOException;
+import java.util.logging.SimpleFormatter;
 
 public class Main {
 
@@ -26,6 +29,10 @@ public class Main {
     public static final int EXERCISES_ALL = 0;
     public static final int EXERCISES_BY_ID = 1;
     public static final int EXERCISES_BY_WORKOUT = 2;
+
+    //Fetch exercise actions
+    public static final int GOALS_ALL = 0;
+    public static final int GOALS_BY_ID = 1;
 
     //Type
     public static final int FETCH_RESULT = 0;
@@ -133,7 +140,7 @@ public class Main {
 
     }
 
-    public static void createResult(Statement stmt, Scanner reader){
+    public static void createResult(Connection conn, Statement stmt, Scanner reader){
 
         //Bugfix
         reader.nextLine();
@@ -143,7 +150,7 @@ public class Main {
         System.out.println("Skriv inn personnummer til medlem");
         String SSN = reader.nextLine();
 
-        printWorkouts(getWorkouts(stmt));
+        printWorkouts(conn, getWorkouts(stmt));
         System.out.println("-------------------");
         System.out.println("Velg trening");
         int workout = reader.nextInt();
@@ -171,7 +178,7 @@ public class Main {
         }
 
         //Analyse the exercise - Create SQL based on type
-        ResultSet type = getExercises(stmt, EXERCISES_BY_ID, exercise);
+        ResultSet type = getExercises(stmt, GOALS_BY_ID, exercise);
         try {
             while(type.next()) {
                 switch (type.getInt("type")) {
@@ -307,14 +314,15 @@ public class Main {
     }
 
 
-    public static void printWorkouts(ResultSet workouts){
+    public static void printWorkouts(Connection conn, ResultSet workouts){
         int count = 0;
         try {
             //System.out.println("Printing workouts");
             while(workouts.next())
             {
                 ++count;
-                System.out.println(workouts.getString("WorkoutID") + " - " + workouts.getString("Name") + " - Tid: " + readableTimestamp(workouts.getTimestamp("Time")) + " - Varighet: " + workouts.getString("Duration") + " minutter - Type: " + workouts.getString("Type"));
+                System.out.println("--> Trening " + workouts.getInt("WorkoutID") + ", " + workouts.getString("Name") + " - Tid: " + readableTimestamp(workouts.getTimestamp("Time")) + " - Varighet: " + workouts.getString("Duration") + " minutter");
+                printExercises(getExercises(createStatement(conn), EXERCISES_BY_WORKOUT, workouts.getInt("WorkoutID")));
             }
             if (count == 0) {
                 System.out.println("Ingen treninger funnet");
@@ -334,7 +342,7 @@ public class Main {
             while(exercises.next())
             {
                 ++count;
-                System.out.println(exercises.getString("ExerciseID") + " - " + exercises.getString("Name") + " - " +  exercises.getString("Description") + " - Type: " + exercises.getInt("Type"));
+                System.out.println(exercises.getInt("ExerciseID") + ", " + exercises.getString("Exercise.Name") + " - " +  exercises.getString("Exercise.Description"));
             }
             if (count == 0) {
                 System.out.println("Ingen øvelser funnet");
@@ -389,23 +397,20 @@ public class Main {
     //This is the goal method
     public static void createGoal(Statement stmt, Scanner reader){
 
-        /*
-        printWorkouts(getWorkouts(stmt));
-        System.out.println("-------------------");
-        System.out.println("Velg trening");
-        int workout = reader.nextInt();
-
-        printExercises(getExercises(stmt, EXERCISES_BY_WORKOUT, workout));
-        System.out.println("-------------------");
-        System.out.println("Velg øvelse");
-        int exercise = reader.nextInt();
-        */
         //Bugfix
         reader.nextLine();
 
-        //printPersons(getPersons(stmt));
+        printPersons(getPersons(stmt));
         System.out.println("Skriv inn personnummer til medlem");
         String SSN = reader.nextLine();
+
+        printExercises(getExercises(stmt, EXERCISES_ALL, ID_NOT_SPECIFIED));
+        System.out.println("-------------------");
+        System.out.println("Velg øvelse");
+        int exercise = reader.nextInt();
+
+        //Bugfix
+        reader.nextLine();
 
         System.out.println("Skriv inn fra dato på formatet 2017-03-15 18:00:00");
         String fromDate = reader.nextLine();
@@ -413,16 +418,82 @@ public class Main {
         System.out.println("Skriv inn til dato på formatet 2017-03-15 18:00:00");
         String toDate = reader.nextLine();
 
-        String SQL = ("INSERT INTO Goal (SSN, FromDate, ToDate) values (" + SSN + ", '" + fromDate + "', '" + toDate + "')");
+        String SQL = ("INSERT INTO Goal (ExerciseID, SSN, FromDate, ToDate) values (" + exercise + ", '" + SSN + "', '" + fromDate + "', '" + toDate + "')");
         //System.out.println(SQL);
 
+        //Create the general result
+        int inserted_id = 0;
         try {
-            System.out.println("Opprettet goal");
-            stmt.executeUpdate(SQL);
+            System.out.println("Opprettet mål");
+            stmt.executeUpdate(SQL, Statement.RETURN_GENERATED_KEYS);
+            ResultSet keys = stmt.getGeneratedKeys();
+            if (keys.next()) {
+                inserted_id = keys.getInt(1);
+            }
+
         } catch (SQLException ex) {
-            System.out.println("Could not create goal");
+            System.out.println("Could not create result");
             printExeption(ex);
         }
+
+        //Analyse the exercise - Create SQL based on type
+        ResultSet type = getExercises(stmt, GOALS_BY_ID, exercise);
+        try {
+            while(type.next()) {
+                switch (type.getInt("type")) {
+                    case EXERCISE_CARDIO:
+
+                        System.out.println("Hvilken vekt vil du oppnå? (Heltall KG)");
+                        int cardio_load = reader.nextInt();
+
+                        System.out.println("Hvor mange repetisjoner?");
+                        int cardio_repetitions = reader.nextInt();
+
+                        System.out.println("Hvor mange sett?");
+                        int cardio_sets = reader.nextInt();
+
+                        SQL = ("INSERT INTO Cardio (GoalID, LoadKG, Repetitions, Sets) values (" + inserted_id + ", " + exercise + ", " + cardio_load + ", " + cardio_repetitions + ", " + cardio_sets + ")");
+                        break;
+                    case EXERCISE_STRENGTH:
+
+                        System.out.println("Hvilken vekt vil du oppnå? (Heltall KG)");
+                        int strength_load = reader.nextInt();
+
+                        System.out.println("Hvor mange repetisjoner?");
+                        int strength_repetitions = reader.nextInt();
+
+                        System.out.println("Hvor mange sett?");
+                        int strength_sets = reader.nextInt();
+
+                        SQL = ("INSERT INTO Strength (GoalID, LoadKG, Repetitions, Sets) values (" + inserted_id + ", " + strength_load + ", " + strength_repetitions + ", " + strength_sets + ")");
+                        break;
+                    case EXERCISE_ENDURANCE:
+
+                        System.out.println("Hva er lengden du ønsker å oppnå?");
+                        int endurance_length = reader.nextInt();
+
+                        System.out.println("På hvor mange minutter?");
+                        int endurance_minutes = reader.nextInt();
+
+                        SQL = ("INSERT INTO Endurance (GoalID, Length, Minutes) values (" + inserted_id + ", " + endurance_length + ", " + endurance_minutes + ")");
+
+                        break;
+                }
+            }
+
+        } catch (SQLException ex) {
+            System.out.println("Could not fetch exercise");
+            printExeption(ex);
+        }
+
+        try {
+            //System.out.println(SQL);
+            stmt.executeUpdate(SQL);
+        } catch (SQLException ex) {
+            System.out.println("Could not create specific result based on type");
+            printExeption(ex);
+        }
+
     }
 
 
@@ -430,7 +501,7 @@ public class Main {
     public static ResultSet getGoals(Statement stmt) {
         try {
             System.out.println("Fetching results");
-            return stmt.executeQuery("SELECT * FROM Goal JOIN Person ON Person.SSN = Goal.SSN");
+            return stmt.executeQuery("SELECT * FROM Goal JOIN Exercise ON Goal.ExerciseID = Exercise.ExerciseID JOIN Person ON Person.SSN = Goal.SSN");
 
         } catch (SQLException ex) {
             System.out.println("Could not fetch workouts");
@@ -440,13 +511,37 @@ public class Main {
     }
 
         //This is goal methods print
-    public static void printGoals(ResultSet goals){
+    public static void printGoals(Connection conn, ResultSet goals){
+
+        int count = 0;
         try {
-            System.out.println("Printing workouts");
+            //System.out.println("Printing workouts");
             while(goals.next())
             {
-                System.out.println("Personnummer: " + goals.getString("Person.Name") + "Fra dato: " + goals.getString("FromDate") + "Til dato " + goals.getString("ToDate"));
-                System.out.println("Dette er en test");
+                ++count;
+                System.out.println(goals.getString("Person.Name") + ", Øvelse: " + goals.getString("Exercise.Name") + ", Fra dato: " + goals.getString("FromDate") + ", Til dato " + goals.getString("ToDate"));
+
+                switch(goals.getInt("Exercise.Type")){
+                    case EXERCISE_CARDIO:
+                        ResultSet cardio = getCardio(createStatement(conn), FETCH_GOAL, goals.getInt("GoalID"));
+                        cardio.next();
+                        System.out.println("Vekt: " + cardio.getString("LoadKG") + " - Repitisjoner: " + cardio.getString("repetitions") + " - Set: " + cardio.getString("sets"));
+                        break;
+                    case EXERCISE_STRENGTH:
+                        ResultSet strength = getStrength(createStatement(conn), FETCH_GOAL, goals.getInt("GoalID"));
+                        strength.next();
+                        System.out.println("Vekt: " + strength.getString("LoadKG") + " - Repitisjoner: " + strength.getString("repetitions") + " - Set: " + strength.getString("sets"));
+                        break;
+                    case EXERCISE_ENDURANCE:
+                        ResultSet endurance = getEndurance(createStatement(conn), FETCH_GOAL, goals.getInt("GoalID"));
+                        endurance.next();
+                        System.out.println("Lengde: " + endurance.getString("Length") + " - Tid: " + endurance.getString("Minutes"));
+                        break;
+                }
+
+            }
+            if (count == 0) {
+                System.out.println("Ingen resultater funnet");
             }
 
         } catch (SQLException ex) {
@@ -560,6 +655,103 @@ public class Main {
         }
     }
 
+    public static void addExerciseToWorkout(Connection conn, Statement stmt, Scanner reader){
+
+        printWorkouts(conn, getWorkouts(stmt));
+        System.out.println("-------------------");
+        System.out.println("Velg trening");
+        int workout = reader.nextInt();
+
+        printExercises(getExercises(stmt, EXERCISES_ALL, ID_NOT_SPECIFIED));
+        System.out.println("-------------------");
+        System.out.println("Velg øvelse");
+        int exercise = reader.nextInt();
+
+        String SQL = ("INSERT INTO WorkoutHasExercise (WorkoutID, ExerciseID) values (" + workout + ", " + exercise + ")");
+        //System.out.println(SQL);
+
+        try {
+            System.out.println("La øvelse til trening");
+            stmt.executeUpdate(SQL);
+        } catch (SQLException ex) {
+            System.out.println("Kunne ikke legge øvelse til trening");
+            printExeption(ex);
+        }
+    }
+
+    public static void addPersonToWorkout(Connection conn, Statement stmt, Scanner reader){
+
+        reader.nextLine();
+
+        printPersons(getPersons(stmt));
+        System.out.println("Skriv inn personnummer til medlem");
+        String SSN = reader.nextLine();
+
+        printWorkouts(conn, getWorkouts(stmt));
+        System.out.println("-------------------");
+        System.out.println("Velg trening");
+        int workout = reader.nextInt();
+
+        System.out.println("Skriv inn ytelsen (1-10)");
+        int performance = reader.nextInt();
+
+        reader.nextLine();
+
+        System.out.println("Skriv inn notater");
+        String notes = reader.nextLine();
+
+        String SQL = ("INSERT INTO PersonHasWorkout (SSN, WorkoutID, Performance, Notes) values ('" + SSN + "', " + workout + ", " + performance+ ", '" + notes + "')");
+        //System.out.println(SQL);
+
+        try {
+            System.out.println("La person til trening");
+            stmt.executeUpdate(SQL);
+        } catch (SQLException ex) {
+            System.out.println("Kunne ikke legge person til trening");
+            printExeption(ex);
+        }
+    }
+
+    public static void createTrainingLog(Connection conn, Statement stmt, Scanner reader){
+
+        Logger logger = Logger.getLogger("TrainingLog");
+        FileHandler fh;
+
+        try {
+
+            // This block configure the logger with handler and formatter
+            fh = new FileHandler("TrainingLog.log");
+            logger.addHandler(fh);
+            SimpleFormatter formatter = new SimpleFormatter();
+            fh.setFormatter(formatter);
+
+        } catch (SecurityException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        try {
+
+            //1System.out.println("Fetching workouts");
+            ResultSet logs = stmt.executeQuery("SELECT * FROM PersonHasWorkout JOIN Workout ON Workout.WorkoutID = PersonHasWorkout.WorkoutID JOIN Person ON Person.SSN = PersonHasWorkout.SSN");
+
+            //System.out.println("Printing workouts");
+            while(logs.next())
+            {
+                // the following statement is used to log any messages
+                logger.info( logs.getString("Person.Name") + " - " + logs.getString("Workout.Name") + " - Tid: " + readableTimestamp(logs.getTimestamp("Time")) + " - Ytelse: " + logs.getString("Performance") + " - Notater: " + logs.getString("Notes") );
+            }
+
+        } catch (SQLException ex) {
+            System.out.println("Could not fetch logs");
+            printExeption(ex);
+        }
+
+
+
+    }
+
 
     public static void closeStatement(Statement stmt ){
         try {
@@ -597,8 +789,11 @@ public class Main {
         System.out.println("10) Opprett nytt resultat");
         System.out.println("11) Opprett ny kategori");
         System.out.println("12) Opprett nytt mål");
-        System.out.println("13) Generer rapport");
-        System.out.println("14) Generer statistikk");
+        System.out.println("13) Opprett trenings logg");
+        System.out.println("14) Legg øvelse til trening");
+        System.out.println("15) Registrer utført trening");
+        //System.out.println("16) Generer rapport");
+        //System.out.println("17) Generer statistikk");
     }
 
     //Main
@@ -624,7 +819,7 @@ public class Main {
                     printPersons(getPersons(stmt));
                     break;
                 case 2:
-                    printWorkouts(getWorkouts(stmt));
+                    printWorkouts(conn, getWorkouts(stmt));
                     break;
                 case 3:
                     printExercises(getExercises(stmt, EXERCISES_ALL, ID_NOT_SPECIFIED));
@@ -636,7 +831,7 @@ public class Main {
                     printCategory(getCategory(stmt));
                     break;
                 case 6:
-                    printGoals(getGoals(stmt));
+                    printGoals(conn, getGoals(stmt));
                     break;
                 case 7:
                     createPerson(stmt, reader);
@@ -648,7 +843,7 @@ public class Main {
                     createExercise(stmt, reader);
                     break;
                 case 10:
-                    createResult(stmt, reader);
+                    createResult(conn, stmt, reader);
                     break;
                 case 11:
                     createCategory(stmt, reader);
@@ -657,9 +852,18 @@ public class Main {
                     createGoal(stmt, reader);
                     break;
                 case 13:
-                    //createReport(stmt, reader);
+                    createTrainingLog(conn, stmt, reader);
                     break;
                 case 14:
+                    addExerciseToWorkout(conn, stmt, reader);
+                    break;
+                case 15:
+                    addPersonToWorkout(conn, stmt, reader);
+                    break;
+                case 16:
+                    //createStatistics(stmt, reader);
+                    break;
+                case 17:
                     //createStatistics(stmt, reader);
                     break;
 
