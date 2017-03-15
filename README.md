@@ -1,7 +1,7 @@
 # TDT4145-Database
 A simple progrem which implements a simple diary in Java by creating functionality showing typical usecases, such as to register trainings, to retrieve data about sessions and collect training notes.
 
-##Getting started
+## Getting started
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
 **/Optional**
