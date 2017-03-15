@@ -4,9 +4,10 @@ A simple progrem which implements a simple diary in Java by creating functionali
 ## Getting started
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
-**/Optional**
-Download Intellij as a compilator for Java<br />
+**/Optional**<br />
+Download Intellij as a compilator for Java
 
+**/Required**<br />
 1) Compile the main.java source file with
 ```
 mysql-connector-java-5.1.41-bin.jar
