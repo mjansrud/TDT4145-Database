@@ -58,7 +58,7 @@ public class Main {
 
         try {
             System.out.println("Database connected");
-            return DriverManager.getConnection("jdbc:mysql://87.76.28.159/utviklin_school?" + "user=utviklin_user&password=" + System.getenv("DTD4145_SERVER_PASSWORD"));
+            return DriverManager.getConnection("jdbc:mysql://mysql.stud.ntnu.no/mortejan_TDT4145?" + "user=mortejan_user&password=" + System.getenv("DTD4145_SERVER_PASSWORD"));
         } catch (SQLException ex) {
             System.out.println("Failed to connect to DB");
             printExeption(ex);
